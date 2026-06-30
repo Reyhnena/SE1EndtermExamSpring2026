@@ -1,0 +1,48 @@
+name: CI Coverage CSV
+
+on:
+  push:
+    branches:
+      - test
+    paths-ignore:
+      - '40231051/messenger/coverage-report.csv'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test-and-coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Run tests and generate coverage report
+        working-directory: 40231051/messenger
+        run: mvn -B clean test jacoco:report
+
+      - name: Copy CSV coverage report to project directory
+        run: cp 40231051/messenger/target/site/jacoco/jacoco.csv 40231051/messenger/coverage-report.csv
+
+      - name: Commit coverage CSV report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add 40231051/messenger/coverage-report.csv
+          git diff --cached --quiet || git commit -m "Add coverage CSV report"
+          git push
+
+      - name: Upload coverage report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report-csv
+          path: 40231051/messenger/coverage-report.csv
